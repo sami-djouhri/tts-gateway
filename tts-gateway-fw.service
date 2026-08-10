@@ -1,0 +1,12 @@
+[Unit]
+Description=DOCKER-USER-Lockdown fuer tts-gateway (host:8146)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tts-gateway-fw.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

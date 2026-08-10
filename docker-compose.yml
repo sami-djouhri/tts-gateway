@@ -1,0 +1,52 @@
+services:
+  tts-gateway:
+    build: .
+    image: tts-gateway:local
+    container_name: tts-gateway
+    restart: unless-stopped
+    # ÜBERGANG (safe-by-default): 127.0.0.1 — solange KEIN Konsument den Gateway nutzt,
+    # darf er nicht als neuer LAN-Pfad zum sonst .11-only XTTS dienen. Host-testbar.
+    # GO-LIVE (mit Owner): auf "8146:8146" (0.0.0.0) flippen — nötig, weil die
+    # Bridge-Konsumenten life-ops/saganta-news den Gateway nur über die host-LAN-IP
+    # erreichen (127.0.0.1 schneidet sie ab) — GLEICHZEITIG tts-gateway-fw.sh scharf
+    # schalten (DOCKER-USER-Lock auf .11). Policy: nie Host-IP im bind → 0.0.0.0 + fw.
+    ports:
+      - "127.0.0.1:8146:8146"
+    environment:
+      - XTTS_URL=http://192.0.2.10:5002
+      - LISTEN_PORT=8146
+      - QUEUE_MAX=64
+      - WORKER_CONCURRENCY=1
+      - MAX_WAIT_INTERACTIVE_S=90
+      - MAX_WAIT_NORMAL_S=180
+      - MAX_WAIT_BATCH_S=1800
+      - BACKEND_TIMEOUT_S=180
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8146/health',timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - tts-gateway-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  tts-gateway-net:
+    name: tts-gateway-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.210.7.0/24

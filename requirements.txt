@@ -1,0 +1,4 @@
+# tts-gateway, schlanker TTS-Job-Bus (aiohttp), keine schweren Frameworks.
+aiohttp==3.10.11
+prometheus-client==0.21.1
+wyoming==1.8.0

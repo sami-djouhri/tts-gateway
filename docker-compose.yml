@@ -1,0 +1,60 @@
+services:
+  tts-gateway:
+    build: .
+    image: tts-gateway:local
+    container_name: tts-gateway
+    restart: unless-stopped
+    # GO-LIVE (2026-08-08): 0.0.0.0 — die Bridge-Konsumenten life-ops/saganta-news
+    # erreichen den Gateway nur über die host-LAN-IP (127.0.0.1 schneidet sie ab).
+    # Zugriff wird per tts-gateway-fw.sh (DOCKER-USER-Lock auf .11) begrenzt — der
+    # fw-Lock MUSS scharf sein (systemd-Unit, Owner-sudo). Policy: nie Host-IP im bind.
+    ports:
+      - "8146:8146"
+    environment:
+      - XTTS_URL=http://192.0.2.10:5002
+      - LISTEN_PORT=8146
+      - QUEUE_MAX=64
+      - WORKER_CONCURRENCY=1
+      - MAX_WAIT_INTERACTIVE_S=90
+      - MAX_WAIT_NORMAL_S=180
+      - MAX_WAIT_BATCH_S=1800
+      - BACKEND_TIMEOUT_S=180
+      # Zweites Backend: Piper synthetisiert in Echtzeit (engine=piper) und
+      # laeuft an der Queue vorbei — die serialisiert nur das langsame XTTS.
+      - PIPER_HOST=wyoming-piper
+      - PIPER_PORT=10200
+      - PIPER_TIMEOUT_S=15
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8146/health',timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - tts-gateway-net
+      - wyoming-piper_default
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Netz der Wyoming-Piper-Bridge: der Gateway spricht das Protokoll nun zentral,
+  # statt dass jeder Konsument eine eigene Wyoming-Verbindung aufbaut.
+  wyoming-piper_default:
+    external: true
+  tts-gateway-net:
+    name: tts-gateway-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.210.7.0/24

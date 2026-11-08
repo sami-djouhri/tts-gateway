@@ -12,6 +12,7 @@ import logging
 import aiohttp
 from aiohttp import web
 
+from .aussprache import aussprechbar
 from . import metrics
 from .broker import BackendError, DeadlineExceeded, QueueFull, TtsBroker
 from .config import priority_from_name, settings
@@ -96,6 +97,8 @@ async def handle_tts(request: web.Request) -> web.StreamResponse:
         return web.json_response({"error": "No text provided"}, status=400)
 
     language = data.get("language", "de")
+    # Englische Woerter in deutscher Umschrift, fuer beide Engines (app/aussprache.py).
+    text = aussprechbar(text, language)
     speaker = data.get("speaker") or None
     speaker_id = data.get("speaker_id") or None
 

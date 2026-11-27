@@ -4,10 +4,6 @@ services:
     image: tts-gateway:local
     container_name: tts-gateway
     restart: unless-stopped
-    # GO-LIVE (2026-08-08): 0.0.0.0, die Bridge-Konsumenten life-ops/saganta-news
-    # erreichen den Gateway nur über die host-LAN-IP (127.0.0.1 schneidet sie ab).
-    # Zugriff wird per tts-gateway-fw.sh (DOCKER-USER-Lock auf .11) begrenzt, der
-    # fw-Lock MUSS scharf sein (systemd-Unit, Owner-sudo). Policy: nie Host-IP im bind.
     ports:
       - "8146:8146"
     environment:

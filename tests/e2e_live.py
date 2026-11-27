@@ -3,7 +3,6 @@ Nicht Teil der Unit-Suite (macht echte ~40s-Synthesen). Aufruf: python tests/e2e
 """
 import io
 import json
-import sys
 import time
 import urllib.request
 import wave

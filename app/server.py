@@ -102,14 +102,6 @@ async def handle_tts(request: web.Request) -> web.StreamResponse:
     speaker = data.get("speaker") or None
     speaker_id = data.get("speaker_id") or None
 
-    # Backend-Wahl: XTTS klingt besser, braucht aber ~44 s/Chunk. Wer schnell
-    # antworten muss (Zug-Ansagen, kurze Quittungen), waehlt engine=piper und
-    # laeuft damit an der Queue vorbei: die serialisiert nur das
-    # single-threaded XTTS.
-    # Sagt der Aufrufer nichts, gilt `engine_default` (seit 2026-09-06 piper,
-    # Begruendung in config.py). Vorher fiel ein schweigender Aufrufer auf XTTS
-    # und wartete damit rund vierzehnmal so lange, ohne es je gewaehlt zu haben.
-    # Ausnahme: wer eine Stimmdatei nennt, meint XTTS (siehe waehle_engine).
     engine = waehle_engine(
         request.headers.get("X-TTS-Engine"),
         data.get("engine"),
@@ -165,11 +157,6 @@ async def handle_tts(request: web.Request) -> web.StreamResponse:
         content_type="audio/wav",
         headers={
             "Content-Disposition": "attachment; filename=tts_output.wav",
-            # Der Piper-Zweig oben nannte sich schon immer im Kopf, dieser
-            # nicht. Ein Aufrufer konnte also nicht feststellen, WER geantwortet
-            # hat, und genau das war am 2026-09-06 der Fall, in dem `news-api`
-            # monatelang Thorsten bekam, obwohl es die geklonte Frauenstimme
-            # bat. Jetzt sagt es jede Antwort.
             "X-TTS-Engine": "kokoro",
         },
     )

@@ -73,25 +73,6 @@ class Settings:
     # single-threaded XTTS. Konsumenten waehlen es per engine=piper.
     piper_host: str = field(default_factory=lambda: _env("PIPER_HOST", "127.0.0.1"))
     piper_port: int = field(default_factory=lambda: _env_int("PIPER_PORT", 10200))
-    # DIE FRIST WAECHST MIT DEM TEXT, sie ist keine feste Zahl mehr. Die alten
-    # 15 s waren an einer kurzen Ansage bemessen und reichten fuer alles ab rund
-    # 400 Zeichen nicht: gemessen am 2026-09-06 auf diesem Wirt 71 Zeichen in
-    # 3,2 s, 213 in 6,6 s, 426 gar nicht mehr. Ein gesprochenes Briefing ist
-    # immer laenger als das, und es scheiterte deshalb ZUVERLAESSIG - mit einer
-    # Fehlermeldung ueber eine Frist, die wie ein haengender Dienst aussieht,
-    # obwohl Piper einfach noch arbeitete.
-    #
-    # DIE RATE IST NICHT LINEAR, und das war die zweite Falle. Aus den
-    # kurzen Messungen ergaben sich 0,024 s je Zeichen, aus dem echten Briefing
-    # mit 1296 Zeichen aber 0,087 - dreieinhalbmal so viel. Ein daraus
-    # hochgerechneter Faktor von 0,08 ergab eine Frist von 113,7 s bei einem
-    # Bedarf von 112,9 s: bestanden mit 0,8 Sekunden Reserve, also faktisch
-    # geraten. Der Faktor steht deshalb auf dem Zweieinhalbfachen der
-    # SCHLECHTESTEN gemessenen Rate, nicht der besten.
-    #
-    # Eine Frist soll einen HAENGER fangen, nicht eine Maschine bestrafen, die
-    # gerade langsam ist. Kurze Ansagen (Schach) scheitern weiterhin binnen
-    # Sekunden, weil ihr Text kurz ist.
     piper_basis_s: float = field(default_factory=lambda: _env_float("PIPER_BASIS_S", 10.0))
     piper_s_je_zeichen: float = field(
         default_factory=lambda: _env_float("PIPER_S_JE_ZEICHEN", 0.2)
